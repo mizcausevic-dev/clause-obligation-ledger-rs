@@ -14,14 +14,26 @@ for (const file of fs.readdirSync(siteDir)) {
   const html = fs.readFileSync(full, "utf8");
   const pathname = file === "index.html" ? "/" : `/${file.replace(/\.html$/, "")}`;
   const url = `https://${domain}${pathname}`;
+
+  // Extract title and description from the existing rendered HTML so og:title /
+  // og:description / twitter:title / twitter:description are route-specific.
+  const titleMatch = html.match(/<title>([^<]+)<\/title>/);
+  const descMatch = html.match(/<meta name="description" content="([^"]+)"/);
+  const pageTitle = titleMatch ? titleMatch[1] : "Clause Obligation Ledger";
+  const pageDesc = descMatch
+    ? descMatch[1]
+    : "Rust control plane for obligation ledgers, event durability, evidence posture, and renewal-safe legal operations.";
+
   const meta = [
     `<link rel="canonical" href="${url}" />`,
     `<meta property="og:type" content="website" />`,
     `<meta property="og:url" content="${url}" />`,
     `<meta property="og:site_name" content="Clause Obligation Ledger RS" />`,
+    `<meta property="og:title" content="${pageTitle}" />`,
+    `<meta property="og:description" content="${pageDesc}" />`,
     `<meta name="twitter:card" content="summary_large_image" />`,
-    `<meta name="twitter:title" content="Clause Obligation Ledger RS" />`,
-    `<meta name="twitter:description" content="Rust control plane for obligation ledgers, event durability, evidence posture, and renewal-safe legal operations." />`
+    `<meta name="twitter:title" content="${pageTitle}" />`,
+    `<meta name="twitter:description" content="${pageDesc}" />`
   ].join("\n    ");
 
   fs.writeFileSync(full, html.replace("</head>", `    ${meta}\n  </head>`));
