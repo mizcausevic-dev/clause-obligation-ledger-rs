@@ -1,0 +1,42 @@
+name: Deploy to ledger.kineticgain.com
+
+# Rust -> Hostinger FTP at /ledger/
+# workflow_dispatch-only: subdomain isn't in Hostinger DNS yet.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-clause-obligation-ledger-rs
+  cancel-in-progress: false
+
+jobs:
+  build-deploy:
+    name: Build + FTP-sync to ledger.kineticgain.com
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Rust
+        run: rustup default stable
+      - name: Prerender
+        run: cargo run --bin prerender --release
+      - name: Verify build output
+        run: |
+          test -d site || (echo "FAIL: site/ missing" && exit 1)
+          test -f site/index.html || (echo "FAIL: site/index.html missing" && exit 1)
+      - uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./site/
+          server-dir: /ledger/
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/.github/**
